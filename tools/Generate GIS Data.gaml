@@ -15,7 +15,7 @@ global {
 	//define the bounds of the studied area
 	file data_file <-shape_file(dataset_path + "boundary.shp");
 	
-	string boundary_name_field <-"NOM_COM_M";  //"nom_comm";
+	string boundary_name_field <-"nom_comm";  //"nom_comm";  "NOM_COM_M"
 	list<string> residential_types <- ["apartments", "hotel", "Résidentiel"]; 
 	
 	float simplification_dist <- 1.0;
@@ -45,6 +45,7 @@ global {
 	geometry shape <- envelope(data_file);
 	map filtering <- ["building"::[], "shop"::[], "historic"::[], "amenity"::[], "sport"::[], "military"::[], "leisure"::[], "office"::[],  "highway"::[]];
 	image_file static_map_request ;
+	
 	init {
 		write "Start the pre-processing process";
 		create Boundary from: data_file {
