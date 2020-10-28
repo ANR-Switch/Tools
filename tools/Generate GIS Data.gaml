@@ -48,7 +48,7 @@ global {
 	//-----------------------------------------------------------------------------------------------------------------------------
 	
 	geometry shape <- envelope(data_file);
-	map filtering <- ["building"::[], "shop"::[], "historic"::[], "amenity"::[], "sport"::[], "military"::[], "leisure"::[], "office"::[],  "highway"::[]];
+	map filtering <- ["building"::[], "shop"::[], "historic"::[], "amenity"::[], "sport"::[], "military"::[], "leisure"::[], "office"::[],  "highway"::[], "junction"::[]];
 	image_file static_map_request ;
 	
 	init {		
@@ -370,11 +370,12 @@ global {
 				if not(empty(bds)) {
 					string oneway <- string(geom get ("oneway"));
 					float maxspeed_val <- float(geom get ("maxspeed"));
+					string junction_osm <- string(geom get("junction"));
 					string lanes_str <- string(geom get ("lanes"));
 					string parking_lane_val <- string(geom get "parking:lane");
 					int lanes_val <- empty(lanes_str) ? 1 : ((length(lanes_str) > 1) ? int(first(lanes_str)) : int(lanes_str));
 					
-					create Road from: [geom] with: [type:: highway_str, lanes::lanes_val, parking_lane::parking_lane_val, maxspeed::maxspeed_val] {
+					create Road from: [geom] with: [type:: highway_str, lanes::lanes_val, parking_lane::parking_lane_val, maxspeed::maxspeed_val, junction::junction_osm] {
 						if lanes < 1 {lanes <- default_num_lanes;} //default value for the lanes attribute
 						if maxspeed = 0 {maxspeed <- default_road_speed;} //default value for the maxspeed attribute
 						boundary <- bds first_with(each overlaps location);
@@ -388,20 +389,24 @@ global {
 								shape <- polyline(reverse(shape.points));
 							}
 							default {
-								create Road {
-									boundary <- myself.boundary;
-									lanes <- lanesbackw > 0 ? lanesbackw : max([1, int(myself.lanes / 2.0)]);
-									shape <- polyline(reverse(myself.shape.points));
-									maxspeed <- myself.maxspeed;
-									type <- myself.type;
-									foot <- myself.foot;
-									bicycle <- myself.bicycle;
-									access <- myself.access;
-									bus <- myself.bus;
-									parking_lane <- myself.parking_lane;
-									sidewalk <- myself.sidewalk;
-									cycleway <- myself.cycleway;
+								if(junction != "roundabout") {							
+									create Road {
+										boundary <- myself.boundary;
+										lanes <- lanesbackw > 0 ? lanesbackw : max([1, int(myself.lanes / 2.0)]);
+										shape <- polyline(reverse(myself.shape.points));
+										maxspeed <- myself.maxspeed;
+										type <- myself.type;
+										foot <- myself.foot;
+										bicycle <- myself.bicycle;
+										access <- myself.access;
+										bus <- myself.bus;
+										parking_lane <- myself.parking_lane;
+										sidewalk <- myself.sidewalk;
+										cycleway <- myself.cycleway;
+										junction <- myself.junction;
+									}									
 								}
+
 								lanes <- lanesforwa > 0 ? lanesbackw : int(lanes / 2.0 + 0.5);
 							}
 						}
