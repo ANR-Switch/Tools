@@ -19,13 +19,15 @@ global {
 	list<string> residential_types <- ["apartments", "hotel", "Résidentiel"]; 
 	
 	float simplification_dist <- 1.0;
+	// If we want to ensure the connectiveness in each boundary.
+	bool roads_connected_by_boundary <- true;
 	
 	//optional
 	string osm_file_path <- dataset_path + "map.pbf";
 	string ign_building_file_path <-  dataset_path + "bati_ign.shp"; 
 	
 	// Activity type buildings
-	file activities_file <- json_file(parameters_path + "Building  type per activity type.json");
+	file activities_file <- json_file(parameters_path + "Building type per activity type.json");
 	map<string, list> activity_types_maps <- activities_file.contents;
 	
 	
@@ -122,7 +124,7 @@ global {
 		write nodes_map;	
 		write "Roads and nodes: agents created";
 		
-		do road_keep_only_connected;
+		do road_keep_only_connected(list(Road));
 		write "Roads and node agents created";
 		
 		do node_creates_missing_node_from_roads;
@@ -346,6 +348,7 @@ global {
 		
 		loop bd over: buildings_per_boundary.keys {
 			list<Building> bds <- buildings_per_boundary[bd];
+
 			if (length(bds) > nb_for_building_shapefile_split) {
 				int i <- 1;
 				loop while: not empty(bds)  {
@@ -425,14 +428,16 @@ global {
 		return nodes_map;
 	}
 	
-	action road_keep_only_connected {
-		graph network<- main_connected_component(as_edge_graph(Road));
+	list<Road> road_keep_only_connected(list<Road> roads) {
+		graph network<- main_connected_component(as_edge_graph(roads));
 		
-		ask Road  {
+		ask roads  {
 			if not (self in network.edges) {
 				do die;
 			}
 		}
+		
+		return roads where(not dead(each));
 		
 		// TODO: cut road that intersects ? 
 	}
@@ -530,6 +535,11 @@ global {
 		
 		loop bd over: roads_per_boundary.keys {
 			list<Road> bds <- roads_per_boundary[bd];
+						
+			if(roads_connected_by_boundary){
+				bds <- road_keep_only_connected(bds);
+			}
+			
 			if (length(bds) > nb_for_road_shapefile_split) {
 				int i <- 1;
 				loop while: not empty(bds)  {
