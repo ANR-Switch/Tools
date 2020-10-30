@@ -102,7 +102,7 @@ global {
 		do blg_default_values_levels_flats;				
 		write "Buildings: default values for flats and levels if needed.";
 	
-		do blg_save;
+		map<Boundary, list<Building>> buildings_per_boundary <- blg_save();
 		write "Buildings: saved in shapefiles";		
 	
 	
@@ -136,11 +136,19 @@ global {
 		do road_save;
 		write "Roads: road agents saved";
 		
-		do node_update_boundaries;
+		map<Boundary, list<Node>> nodes_per_boundary <- node_update_boundaries();
 		write "Nodes: create missing Nodes from Roads.";
 
 		do node_save;
 		write "Node: agents saved";
+
+
+		write "//--------------------------------------------------------------------------";
+		write "// Save boundaries";
+		write "//--------------------------------------------------------------------------";
+
+		do boundaries_save(buildings_per_boundary, nodes_per_boundary);
+		write "Boundary saved";
 
 
 		write "//--------------------------------------------------------------------------";
@@ -343,7 +351,7 @@ global {
 		}
 	}
 	
-	action blg_save {
+	map<Boundary, list<Building>> blg_save {
 		map<Boundary, list<Building>> buildings_per_boundary <- Building group_by (each.boundary);
 		
 		loop bd over: buildings_per_boundary.keys {
@@ -361,6 +369,7 @@ global {
 				save bds to:dataset_path+ bd.name +"/buildings.shp" type: shp attributes: ["id"::id,"sub_area"::boundary.name,"type"::type, "types"::types_str , "flats"::flats,"height"::height, "levels"::levels];
 			}
 		}		
+		return buildings_per_boundary;
 	}
 
 	map<point, Node> road_node_create(list<geometry> roads_intersection ) {
@@ -476,7 +485,7 @@ global {
 		}	
 	}
 
-	action node_update_boundaries {
+	map<Boundary, list<Node>> node_update_boundaries {
 		map<Boundary, list<Node>> nodes_per_boundary;
 		loop bb over: Boundary {
 			nodes_per_boundary[bb] <- [];
@@ -499,6 +508,7 @@ global {
 			}
 			
 		}
+		return nodes_per_boundary;
 	}
 	
 	action node_save{
@@ -528,6 +538,19 @@ global {
 				}
 			}
 		}
+	}
+
+	action boundaries_save(
+		map<Boundary, list<Building>> buildings_per_boundary,
+		map<Boundary, list<Node>> nodes_per_boundary						
+	) {
+		map<Boundary, list<Road>> roads_per_boundary <- Road group_by (each.boundary);
+		
+		loop bd over: Boundary {
+			geometry s <- envelope(envelope(buildings_per_boundary[bd]), envelope(nodes_per_boundary[bd]),roads_per_boundary[bd]);
+			save s type:"shp" to: dataset_path + bd.name +"/boundary.shp" ;	
+		}
+		
 	}
 	
 	action road_save {
