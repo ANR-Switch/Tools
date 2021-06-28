@@ -8,7 +8,7 @@ model switch_utilities_gis
 
 global {	
 	// define the path to the dataset folder
-	string dataset_path <- "../Datasets/Castanet Tolosan/";
+	string dataset_path <- "../Datasets/Rocade/";
 	// define the path to the main project folder
 	string parameters_path <- "../../SwITCh-v2/Parameters/";
 	
