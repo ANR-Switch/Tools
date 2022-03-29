@@ -711,7 +711,7 @@ species Building {
 
 species Boundary {
 	aspect default {
-		draw shape color: #red empty: true;
+		draw shape color: #red wireframe: true;
 	}
 }
 
@@ -725,7 +725,7 @@ experiment generateGISdata type: gui autorun: true {
 		create simulation;
 	}
 	output {
-		display map type: opengl draw_env: false background: #black{
+		display map type: opengl axes: false background: #black{
 			image (file_exists(dataset_path+"/satellite.png") ? (dataset_path+"/satellite.png"): "white.png")  transparency: 0.2;
 
 			species Boundary;
